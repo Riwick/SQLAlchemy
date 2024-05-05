@@ -8,4 +8,4 @@ from src.queries.orm import insert_data, create_tables, async_insert_data
 
 create_tables()
 
-asyncio.run(async_insert_data())
+# asyncio.run(async_insert_data())

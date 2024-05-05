@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     def database_url_psycopg(self):
         return f"postgresql+psycopg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
-    model_config = SettingsConfigDict(env_file=r"C:\Users\rodbe\PycharmProjects\Модули\SQLAlchemy\SQLAlchemy\.env")
+    model_config = SettingsConfigDict(env_file=r"C:\Users\rodbe\PycharmProjects\Модули\SQLAlchemy\SQLAlchemy\.env",
+                                      extra=None)
 
 
 settings = Settings()
