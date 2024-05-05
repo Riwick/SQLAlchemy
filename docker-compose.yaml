@@ -1,0 +1,9 @@
+version: "3.0"
+services:
+  database:
+    image: postgres:16.1-alpine
+    env_file:
+      - .env
+    ports:
+      - "10000:5432"
+    container_name: SQLAlchemy-Database
