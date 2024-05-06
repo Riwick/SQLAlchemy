@@ -1,7 +1,7 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func, cast, Integer, and_
 
 from src.database import session_factory, sync_engine, async_session_factory, Base
-from src.models import WorkersORM
+from src.models import WorkersORM, ResumesORM
 
 
 class SyncORM:
@@ -42,6 +42,30 @@ class SyncORM:
             # )
             # session.execute(stmt)
             session.commit()
+
+    @staticmethod
+    def select_resumes_avg_compensation():
+        """select workload, avg(compensation)::int as avg_compensation
+        from resumes
+        where title like '%Python%' and compensation > 40000
+        group by workload"""
+        with session_factory() as session:
+            query = (
+                select(
+                    ResumesORM.workload,
+                    cast(func.avg(ResumesORM.compensation), Integer).label("avg_compensation"),
+                ).
+                where(and_(
+                    ResumesORM.title.like("%Python%"),
+                    ResumesORM.compensation > 40000,
+                )).
+                group_by(ResumesORM.workload).
+                having(cast(func.avg(ResumesORM.compensation), Integer) > 70000)
+            )
+            # print(query.compile(compile_kwargs={"literal_binds": True}))
+            result = session.execute(query).all()
+            print(result[0].avg_compensation)
+            print(result)
 
 
 class AsyncORM:
