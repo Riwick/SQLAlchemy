@@ -6,7 +6,7 @@ from sqlalchemy import Table, Column, String, Integer, MetaData, ForeignKey, fun
 from sqlalchemy.orm import mapped_column, Mapped
 from src.database import Base, str_256
 
-intpk = Annotated[int, mapped_column(primary_key=True)]
+integer_pk = Annotated[int, mapped_column(primary_key=True)]
 created_at = Annotated[datetime.datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))]
 updated_at = Annotated[datetime.datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"),
                                                         onupdate=datetime.datetime.utcnow)]
@@ -15,7 +15,7 @@ updated_at = Annotated[datetime.datetime, mapped_column(server_default=text("TIM
 class WorkersORM(Base):
     __tablename__ = "workers"
 
-    worker_id: Mapped[intpk]
+    worker_id: Mapped[integer_pk]
     username: Mapped[str]
 
 
@@ -27,7 +27,7 @@ class WorkLoad(enum.Enum):
 class ResumesORM(Base):
     __tablename__ = "resumes"
 
-    resume_id: Mapped[intpk]
+    resume_id: Mapped[integer_pk]
     title: Mapped[str_256]
     compensation: Mapped[Optional[int]]
     workload: Mapped[WorkLoad]
