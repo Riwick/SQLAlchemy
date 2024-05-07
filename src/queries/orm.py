@@ -1,5 +1,5 @@
 from sqlalchemy import select, func, cast, Integer, and_, insert
-from sqlalchemy.orm import aliased, joinedload, selectinload
+from sqlalchemy.orm import aliased, joinedload, selectinload, contains_eager
 
 from src.database import session_factory, sync_engine, async_session_factory, Base
 from src.models import WorkersORM, ResumesORM
@@ -114,6 +114,31 @@ class SyncORM:
 
             print(worker_1_resumes)
             print(worker_2_resumes)
+
+    @staticmethod
+    def select_workers_with_condition_relationships():
+        with session_factory() as session:
+            query = (
+                select(WorkersORM).options(selectinload(WorkersORM.resumes_part_time))
+            )
+            res = session.execute(query)
+            result = res.scalars().all()
+
+            print(result)
+
+    @staticmethod
+    def select_workers_with_condition_relationships_contains_eager():
+        with session_factory() as session:
+            query = (
+                select(WorkersORM).
+                join(WorkersORM.resumes).
+                options(contains_eager(WorkersORM.resumes)).
+                filter(ResumesORM.workload == "part_time")
+            )
+            res = session.execute(query)
+            result = res.unique().scalars().all()
+
+            print(result)
 
 
 class AsyncORM:

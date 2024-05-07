@@ -9,6 +9,7 @@ from src.queries.orm import SyncORM, AsyncORM
 
 # SyncORM.select_workers_with_joined_relationship()
 # SyncORM.select_workers_with_lazy_relationship()
-SyncORM.select_workers_with_selectin_relationship()
-
+# SyncORM.select_workers_with_selectin_relationship()
+# SyncORM.select_workers_with_condition_relationships()
+SyncORM.select_workers_with_condition_relationships_contains_eager()
 # asyncio.run(AsyncORM.join_cte_subquery_window_func())
