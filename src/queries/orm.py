@@ -4,6 +4,8 @@ from sqlalchemy.orm import aliased, joinedload, selectinload, contains_eager
 from src.database import session_factory, sync_engine, async_session_factory, Base
 from src.models import WorkersORM, ResumesORM
 
+from src.schemas import WorkersDTO, WorkersRelDTO
+
 
 class SyncORM:
 
@@ -25,10 +27,12 @@ class SyncORM:
     @staticmethod
     def select_workers():
         with session_factory() as session:
-            query = select(WorkersORM)
-            res = session.execute(query)
-            workers = res.scalars().all()
-            print(f"{workers=}")
+            query = (
+                select(WorkersORM)
+            )
+            res = session.execute(query).scalars().all()
+            workers = [WorkersDTO.model_validate(row, from_attributes=True) for row in res]
+            return workers
 
     @staticmethod
     def update_worker(worker_id: int = 2, new_username: str = "Michael"):
@@ -109,17 +113,25 @@ class SyncORM:
             res = session.execute(query)
             result = res.unique().scalars().all()
 
-            worker_1_resumes = result[3].resumes
-            worker_2_resumes = result[2].resumes
+            return result
 
-            print(worker_1_resumes)
-            print(worker_2_resumes)
+    @staticmethod
+    def convert_workers_to_dto():
+        with session_factory() as session:
+            query = (
+                select(WorkersORM).options(selectinload(WorkersORM.resumes))
+                .limit(2)
+            )
+            res = session.execute(query).scalars().all()
+
+            result_dto = [WorkersRelDTO.model_validate(row, from_attributes=True) for row in res]
+            return result_dto
 
     @staticmethod
     def select_workers_with_condition_relationships():
         with session_factory() as session:
             query = (
-                select(WorkersORM).options(selectinload(WorkersORM.resumes_part_time))
+                select(WorkersORM).options(selectinload(WorkersORM.resumes))
             )
             res = session.execute(query)
             result = res.scalars().all()
@@ -139,6 +151,17 @@ class SyncORM:
             result = res.unique().scalars().all()
 
             print(result)
+
+    @staticmethod
+    def select_resumes():
+        with session_factory() as session:
+            query = (
+                select(ResumesORM).options(selectinload(ResumesORM.worker))
+                .limit(2)
+            )
+            res = session.execute(query).scalars().all()
+
+            return res
 
 
 class AsyncORM:
@@ -163,11 +186,11 @@ class AsyncORM:
             ]
 
             resumes = [
-                {"title": "Python программист", "compensation": 60000, "workload": "full_time", "worker": 3},
-                {"title": "Machine Learning Engineer", "compensation": 70000, "workload": "part_time", "worker": 3},
-                {"title": "Python Data Scientist", "compensation": 80000, "workload": "part_time", "worker": 4},
-                {"title": "Python Analyst", "compensation": 90000, "workload": "full_time", "worker": 4},
-                {"title": "Python Junior Developer", "compensation": 100000, "workload": "full_time", "worker": 5},
+                {"title": "Python программист", "compensation": 60000, "workload": "full_time", "worker_id": 3},
+                {"title": "Machine Learning Engineer", "compensation": 70000, "workload": "part_time", "worker_id": 1},
+                {"title": "Python Data Scientist", "compensation": 80000, "workload": "part_time", "worker_id": 4},
+                {"title": "Python Analyst", "compensation": 90000, "workload": "full_time", "worker_id": 2},
+                {"title": "Python Junior Developer", "compensation": 100000, "workload": "full_time", "worker_id": 5},
             ]
             insert_workers = insert(WorkersORM).values(workers)
             insert_resumes = insert(ResumesORM).values(resumes)
