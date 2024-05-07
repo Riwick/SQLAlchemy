@@ -1,6 +1,6 @@
 from sqlalchemy import select, insert, update, text
 from src.database import async_engine, sync_engine, session_factory
-from src.models import metadata_obj, workers_table, WorkersORM
+from src.models import WorkersORM
 
 
 class SyncCore:

@@ -1,5 +1,5 @@
-from sqlalchemy import select, update, func, cast, Integer, and_, insert
-from sqlalchemy.orm import aliased
+from sqlalchemy import select, func, cast, Integer, and_, insert
+from sqlalchemy.orm import aliased, joinedload, selectinload
 
 from src.database import session_factory, sync_engine, async_session_factory, Base
 from src.models import WorkersORM, ResumesORM
@@ -68,6 +68,53 @@ class SyncORM:
             print(result[0].avg_compensation)
             print(result)
 
+    @staticmethod
+    def select_workers_with_lazy_relationship():
+        with session_factory() as session:
+            query = (
+                select(WorkersORM)
+            )
+            res = session.execute(query)
+            result = res.scalars().all()
+
+            worker_1_resumes = result[3].resumes
+            worker_2_resumes = result[2].resumes
+
+            print(worker_1_resumes)
+            print(worker_2_resumes)
+
+    @staticmethod
+    def select_workers_with_joined_relationship():
+        """Для связи m2o и o2o (многие-к-одному и один-к-одному)"""
+        with session_factory() as session:
+            query = (
+                select(WorkersORM).options(joinedload(WorkersORM.resumes))
+            )
+            res = session.execute(query)
+            result = res.unique().scalars().all()
+
+            worker_1_resumes = result[3].resumes
+            worker_2_resumes = result[2].resumes
+
+            print(worker_1_resumes)
+            print(worker_2_resumes)
+
+    @staticmethod
+    def select_workers_with_selectin_relationship():
+        """Для связи o2m и m2m (один-ко-многим и многие-ко-многим)"""
+        with session_factory() as session:
+            query = (
+                select(WorkersORM).options(selectinload(WorkersORM.resumes))
+            )
+            res = session.execute(query)
+            result = res.unique().scalars().all()
+
+            worker_1_resumes = result[3].resumes
+            worker_2_resumes = result[2].resumes
+
+            print(worker_1_resumes)
+            print(worker_2_resumes)
+
 
 class AsyncORM:
 
@@ -82,15 +129,27 @@ class AsyncORM:
     @staticmethod
     async def insert_additional_resumes():
         async with async_session_factory() as session:
-            resumes = [
-                {"title": "Python программист", "compensation": 60000, "workload": "full_time", "worker_id": 3},
-                {"title": "Machine Learning Engineer", "compensation": 70000, "workload": "part_time", "worker_id": 3},
-                {"title": "Python Data Scientist", "compensation": 80000, "workload": "part_time", "worker_id": 4},
-                {"title": "Python Analyst", "compensation": 90000, "workload": "full_time", "worker_id": 4},
-                {"title": "Python Junior Developer", "compensation": 100000, "workload": "full_time", "worker_id": 5},
+            workers = [
+                {"username": "Michail"},
+                {"username": "Riwi"},
+                {"username": "Bobr"},
+                {"username": "Oleg"},
+                {"username": "Pasha"},
             ]
-            insert_workers = insert(ResumesORM).values(resumes)
+
+            resumes = [
+                {"title": "Python программист", "compensation": 60000, "workload": "full_time", "worker": 3},
+                {"title": "Machine Learning Engineer", "compensation": 70000, "workload": "part_time", "worker": 3},
+                {"title": "Python Data Scientist", "compensation": 80000, "workload": "part_time", "worker": 4},
+                {"title": "Python Analyst", "compensation": 90000, "workload": "full_time", "worker": 4},
+                {"title": "Python Junior Developer", "compensation": 100000, "workload": "full_time", "worker": 5},
+            ]
+            insert_workers = insert(WorkersORM).values(workers)
+            insert_resumes = insert(ResumesORM).values(resumes)
             await session.execute(insert_workers)
+            await session.commit()
+
+            await session.execute(insert_resumes)
             await session.commit()
 
     @staticmethod
@@ -119,11 +178,12 @@ class AsyncORM:
                 w,
                 cast(func.avg(r.compensation).over(partition_by=r.workload), Integer).label("avg_workload_compensation")
             ).
-            join(r, r.worker_id == w.worker_id).subquery("helper2")
+            join(r, r.worker_id == w.worker_id).subquery("helper1")
         )
         cte = (
             select(
                 subquery.c.worker_id,
+                subquery.c.title,
                 subquery.c.username,
                 subquery.c.compensation,
                 subquery.c.workload,
@@ -133,7 +193,7 @@ class AsyncORM:
             cte("helper2")
         )
         query = (
-            select(cte).order_by(cte.c.compensation_diff.desc())
+            select(cte).where(cte.c.title.contains(like_language)).order_by(cte.c.compensation_diff.desc())
         )
 
         print(query.compile(compile_kwargs={"literal_binds": True}))

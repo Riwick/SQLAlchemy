@@ -3,7 +3,7 @@ import enum
 from typing import Optional, Annotated
 
 from sqlalchemy import Table, Column, String, Integer, MetaData, ForeignKey, func, text
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 from src.database import Base, str_256
 
 integer_pk = Annotated[int, mapped_column(primary_key=True)]
@@ -18,6 +18,8 @@ class WorkersORM(Base):
     worker_id: Mapped[integer_pk]
     username: Mapped[str]
 
+    resumes: Mapped[list["ResumesORM"] | None] = relationship()
+
 
 class WorkLoad(enum.Enum):
     part_time = "part_time"
@@ -31,9 +33,14 @@ class ResumesORM(Base):
     title: Mapped[str_256]
     compensation: Mapped[Optional[int]]
     workload: Mapped[WorkLoad]
-    worker_id: Mapped[int] = mapped_column(ForeignKey("workers.worker_id", ondelete="CASCADE"))
+    worker: Mapped[int] = mapped_column(ForeignKey("workers.worker_id", ondelete="CASCADE"))
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
+
+    worker_id: Mapped["WorkersORM"] = relationship()
+
+    repr_cols_num = 3
+    repr_cols = ("worker", "created_at")
 
 
 metadata_obj = MetaData()
