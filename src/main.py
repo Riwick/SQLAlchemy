@@ -1,8 +1,12 @@
 import uvicorn
 from fastapi import FastAPI, APIRouter
 
-from src.queries.orm import SyncORM
-from src.schemas import WorkersRelListDTO, WorkersListDTO, ResumesRelListDTO
+from src.queries.workers_orm import WorkersQueries
+from src.queries.resumes_orm import ResumesQueries
+from src.queries.vacancies_orm import VacanciesQueries
+
+from src.schemas.resumes_schemas import ResumesRelListDTO
+from src.schemas.workers_schemas import WorkersRelListDTO, WorkersListDTO
 
 app = FastAPI()
 
@@ -16,37 +20,37 @@ vacancies_router = APIRouter(prefix="/vacancies", tags=["Vacancies"])
 
 @workers_router.get("/", response_model=WorkersListDTO)
 async def get_workers():
-    workers = SyncORM.select_workers()
+    workers = WorkersQueries.select_workers()
     return {"result": workers}
 
 
 @workers_router.get("/with_resumes", response_model=WorkersRelListDTO)
 async def get_workers_and_resumes():
-    workers = SyncORM.convert_workers_to_dto()
+    workers = WorkersQueries.convert_workers_to_dto()
     return {"result": workers}
 
 
 @resumes_router.get("/", response_model=ResumesRelListDTO)
 async def get_resumes():
-    resumes = SyncORM.select_resumes()
+    resumes = ResumesQueries.select_resumes()
     return {"result": resumes}
 
 
 @resumes_router.get("/resumes_with_relationships")
 async def get_resumes_relationships():
-    resumes = SyncORM.select_resumes_with_all_relationships()
+    resumes = ResumesQueries.select_resumes_with_all_relationships()
     return resumes
 
 
 @vacancies_router.get("/")
 async def get_vacancies():
-    vacancies = SyncORM.select_vacancies()
+    vacancies = VacanciesQueries.select_vacancies()
     return vacancies
 
 
 @vacancies_router.get("/vacancies_replied")
 async def get_vacancies_replied():
-    vacancies = SyncORM.select_vacancies_replies()
+    vacancies = VacanciesQueries.select_vacancies_replies()
     return vacancies
 
 
