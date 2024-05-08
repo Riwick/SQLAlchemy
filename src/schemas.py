@@ -25,6 +25,7 @@ class WorkersRelListDTO(BaseModel):
 class WorkersListDTO(BaseModel):
     result: list["WorkersDTO"]
 
+
 class ResumesAddDTO(BaseModel):
     title: str
     compensation: Optional[int]
@@ -46,3 +47,15 @@ class ResumesRelListDTO(BaseModel):
     result: list["ResumesRelDTO"]
 
 
+class VacanciesAddDTO(BaseModel):
+    title: str
+    compensation: Optional[int]
+
+
+class VacanciesDTO(VacanciesAddDTO):
+    vacancy_id: int
+
+
+class ResumesRelVacanciesRepliedDTO(ResumesDTO):
+    worker: "WorkersDTO"
+    vacancies_replied: list["VacanciesDTO"]

@@ -2,16 +2,16 @@ from sqlalchemy import select, func, cast, Integer, and_, insert
 from sqlalchemy.orm import aliased, joinedload, selectinload, contains_eager
 
 from src.database import session_factory, sync_engine, async_session_factory, Base
-from src.models import WorkersORM, ResumesORM
+from src.models import WorkersORM, ResumesORM, VacanciesORM, VacanciesRepliesORM
 
-from src.schemas import WorkersDTO, WorkersRelDTO
+from src.schemas import WorkersDTO, WorkersRelDTO, ResumesRelVacanciesRepliedDTO
 
 
 class SyncORM:
 
     @staticmethod
     def create_tables():
-        Base.metadata.drop_all(sync_engine)
+        # Base.metadata.drop_all(sync_engine)
         sync_engine.echo = True
         Base.metadata.create_all(sync_engine)
 
@@ -162,6 +162,47 @@ class SyncORM:
             res = session.execute(query).scalars().all()
 
             return res
+
+    @staticmethod
+    def add_vacancies_and_replies():
+        with session_factory() as session:
+            new_vacancy = VacanciesORM(title="Python Разработчик", compensation=100000)
+            resume_1 = session.get(ResumesORM, 1)
+            resume_2 = session.get(ResumesORM, 2)
+            resume_1.vacancies_replied.append(new_vacancy)
+            resume_2.vacancies_replied.append(new_vacancy)
+            session.commit()
+
+    @staticmethod
+    def select_resumes_with_all_relationships():
+        with session_factory() as session:
+            query = (
+                select(ResumesORM)
+                .options(selectinload(ResumesORM.worker))
+                .options(joinedload(ResumesORM.vacancies_replied))
+            )
+            result = session.execute(query).unique().scalars().all()
+            result = [ResumesRelVacanciesRepliedDTO.model_validate(row, from_attributes=True) for row in result]
+            return result
+
+    @staticmethod
+    def select_vacancies():
+        with session_factory() as session:
+            query = (
+                select(VacanciesORM)
+                .options(joinedload(VacanciesORM.resumes_replied))
+            )
+            result = session.execute(query).unique().scalars().all()
+            return result
+
+    @staticmethod
+    def select_vacancies_replies():
+        with session_factory() as session:
+            query = (
+                select(VacanciesRepliesORM)
+            )
+            result = session.execute(query).scalars().all()
+            return result
 
 
 class AsyncORM:

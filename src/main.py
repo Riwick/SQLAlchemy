@@ -11,6 +11,8 @@ workers_router = APIRouter(prefix="/workers", tags=["Workers"])
 
 resumes_router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
+vacancies_router = APIRouter(prefix="/vacancies", tags=["Vacancies"])
+
 
 @workers_router.get("/", response_model=WorkersListDTO)
 async def get_workers():
@@ -30,9 +32,30 @@ async def get_resumes():
     return {"result": resumes}
 
 
+@resumes_router.get("/resumes_with_relationships")
+async def get_resumes_relationships():
+    resumes = SyncORM.select_resumes_with_all_relationships()
+    return resumes
+
+
+@vacancies_router.get("/")
+async def get_vacancies():
+    vacancies = SyncORM.select_vacancies()
+    return vacancies
+
+
+@vacancies_router.get("/vacancies_replied")
+async def get_vacancies_replied():
+    vacancies = SyncORM.select_vacancies_replies()
+    return vacancies
+
+
+app.include_router(vacancies_router)
 app.include_router(resumes_router)
 app.include_router(workers_router)
 
 
 if __name__ == '__main__':
     uvicorn.run("main:app", reload=True, host="localhost", port=8000)
+    # SyncORM.create_tables()
+    # SyncORM.add_vacancies_and_replies()
